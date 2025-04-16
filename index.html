@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <title>BlackPulse - Anonymer Chat</title>
+  <style>
+    body {
+      background-color: #000;
+      color: #0f0;
+      font-family: monospace;
+      text-align: center;
+      margin-top: 20vh;
+    }
+    input, button {
+      padding: 10px;
+      margin: 5px;
+      background: #222;
+      border: 1px solid #0f0;
+      color: #0f0;
+    }
+    button:hover {
+      background: #0f0;
+      color: #000;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+  <h1>BlackPulse</h1>
+  <form action="chat.html" method="get">
+    <input type="text" name="username" placeholder="Wähle deinen Usernamen" required>
+    <input type="text" name="room" placeholder="Private Gruppe (optional)">
+    <button type="submit">Betrete den Chat</button>
+  </form>
+</body>
+</html>
