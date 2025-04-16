@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <title>BlackPulse - Chat Room</title>
+  <style>
+    body {
+      background-color: #111;
+      color: #ddd;
+      font-family: monospace;
+      margin: 0;
+      padding: 0;
+      overflow: hidden;
+    }
+    #chat-container {
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+    }
+    #messages {
+      flex: 1;
+      overflow-y: scroll;
+      padding: 20px;
+      background: #000;
+    }
+    #input-area {
+      display: flex;
+      padding: 10px;
+      background: #222;
+      align-items: center;
+    }
+    #input-area input[type="text"] {
+      flex: 1;
+      padding: 10px;
+      background: #333;
+      border: 1px solid #555;
+      color: #eee;
+      margin-right: 10px;
+    }
+    #input-area input[type="file"] {
+      margin-right: 10px;
+      color: #eee;
+      background: #333;
+      border: 1px solid #555;
+    }
+    #input-area button {
+      padding: 10px 20px;
+      background: #444;
+      border: 1px solid #666;
+      color: #fff;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+  <div id="chat-container">
+    <div id="messages"></div>
+    <div id="input-area">
+      <input type="text" id="messageInput" placeholder="Deine Nachricht...">
+      <input type="file" id="fileInput" accept="image/*,application/pdf">
+      <button id="sendButton">Senden</button>
+    </div>
+  </div>
+
+  <!-- Socket.IO Client Library -->
+  <script src="/socket.io/socket.io.js"></script>
+  <script>
+    // Hole die Username- und Room-Parameter aus der URL
+    const urlParams = new URLSearchParams(window.location.search);
+    const username = urlParams.get('username') || 'Anon';
+    const room = urlParams.get('room') || 'global';
+
+    // Verbinde dich mit dem Socket.IO Server
+    const socket = io();
+
+    // Trete dem gewünschten Raum bei
+    socket.emit('joinRoom', { username, room });
+
+    // Nachrichten senden
+    document.getElementById('sendButton').addEventListener('click', sendMessage);
+    document.getElementById('messageInput').addEventListener('keypress', function(e) {
+      if (e.key === 'Enter') sendMessage();
+    });
+
+    function sendMessage() {
+      const msgInput = document.getElementById('messageInput');
+      const msg = msgInput.value;
+      if (msg.trim() !== '') {
+        socket.emit('chatMessage', msg);
+        msgInput.value = '';
+      }
+    }
+
+    // Datei-Upload Handling
+    document.getElementById('fileInput').addEventListener('change', function() {
+      const file = this.files[0];
+      if (file && file.size <= 5 * 1024 * 1024) { // 5MB Limit
+        const formData = new FormData();
+        formData.append('file', file);
+        // Sende die Datei an den Server (Endpoint: /upload)
+        fetch('/upload', {
+          method: 'POST',
+          body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+          if (data.success) {
+            // Sende den Dateilink als Nachricht im Chat
+            socket.emit('chatMessage', username + ' hat eine Datei geteilt: ' + data.fileUrl);
+          } else {
+            alert('Dateiupload fehlgeschlagen.');
+          }
+        })
+        .catch(err => {
+          console.error(err);
+          alert('Fehler beim Upload.');
+        });
+      } else {
+        alert('Datei zu groß (max. 5MB) oder keine Datei ausgewählt.');
+      }
+    });
+
+    // Empfangene Nachrichten anzeigen
+    socket.on('message', function(message) {
+      const msgContainer = document.getElementById('messages');
+      const msgElement = document.createElement('div');
+      msgElement.textContent = message;
+      msgContainer.appendChild(msgElement);
+      msgContainer.scrollTop = msgContainer.scrollHeight;
+    });
+  </script>
+</body>
+</html>
