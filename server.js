@@ -9,7 +9,7 @@ const server = http.createServer(app);
 const io = socketio(server);
 const PORT = process.env.PORT || 3000;
 
-// Multer Storage Setup – Dateien werden in /public/uploads gespeichert
+// Multer Storage: Dateien landen in /public/uploads
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
     cb(null, path.join(__dirname, 'public', 'uploads'));
@@ -19,12 +19,12 @@ const storage = multer.diskStorage({
     cb(null, uniqueSuffix + '-' + file.originalname);
   }
 });
-const upload = multer({ storage: storage, limits: { fileSize: 5 * 1024 * 1024 } }); // 5MB Limit
+const upload = multer({ storage: storage, limits: { fileSize: 5 * 1024 * 1024 } });
 
-// Statische Dateien im Ordner /public bereitstellen
+// Statische Dateien in /public bereitstellen
 app.use(express.static(path.join(__dirname, 'public')));
 
-// Upload-Endpoint
+// File Upload Endpoint
 app.post('/upload', upload.single('file'), (req, res) => {
   if(req.file) {
     res.json({ success: true, fileUrl: '/uploads/' + req.file.filename });
@@ -33,10 +33,10 @@ app.post('/upload', upload.single('file'), (req, res) => {
   }
 });
 
-// In-Memory-Speicher für Nachrichten
+// In-Memory-Speicher für Chat-Nachrichten
 let messages = [];
 
-// Auto-Löschung: Nachrichten, die älter als 24 Stunden sind, werden alle Minute entfernt
+// Auto-Cleanup: Nachrichten, die älter als 24 Stunden sind, alle Minute entfernen
 setInterval(() => {
   const now = Date.now();
   messages = messages.filter(msg => now - msg.time < 24 * 60 * 60 * 1000);
@@ -47,18 +47,18 @@ io.on('connection', socket => {
     socket.join(room);
     socket.username = username;
     socket.room = room;
-    // Bestehende Nachrichten des Raumes an neuen User senden
+    // Vorherige Nachrichten aus diesem Raum an den neuen User senden
     messages.filter(m => m.room === room)
       .forEach(m => socket.emit('message', `${m.username}: ${m.text}`));
     io.to(room).emit('message', `${username} ist dem Chat beigetreten.`);
   });
-
+  
   socket.on('chatMessage', (msg) => {
     const messageObj = { username: socket.username, room: socket.room, text: msg, time: Date.now() };
     messages.push(messageObj);
     io.to(socket.room).emit('message', `${socket.username}: ${msg}`);
   });
-
+  
   socket.on('disconnect', () => {
     io.to(socket.room).emit('message', `${socket.username} hat den Chat verlassen.`);
   });
