@@ -36,7 +36,7 @@ app.post('/upload', upload.single('file'), (req, res) => {
 // In-Memory-Speicher für Nachrichten
 let messages = [];
 
-// Auto-Löschung: Nachrichten älter als 24 Stunden werden alle Minute entfernt
+// Auto-Löschung: Nachrichten, die älter als 24 Stunden sind, werden alle Minute entfernt
 setInterval(() => {
   const now = Date.now();
   messages = messages.filter(msg => now - msg.time < 24 * 60 * 60 * 1000);
